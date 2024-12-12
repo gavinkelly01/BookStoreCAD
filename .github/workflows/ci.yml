@@ -30,6 +30,9 @@ jobs:
           gem install bundler
           bundle install
 
+      - name: Check Ruby version
+        run: ruby -v  # Debug step to verify Ruby version is correct
+
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
 
