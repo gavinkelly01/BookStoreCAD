@@ -33,15 +33,19 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
+            # Ensure that the RVM profile is sourced correctly if using RVM
+            if [[ -s "/etc/profile.d/rvm.sh" ]]; then
+              source /etc/profile.d/rvm.sh
+            fi
             cd ${{ secrets.DEPLOYMENT_DIR }}
             git pull origin main
-            source /etc/profile.d/rvm.sh  # Adjust if using RVM
             bundle install --deployment --without development test
             rake db:migrate RAILS_ENV=production
-            assets:precompile RAILS_ENV=production
+            rake assets:precompile RAILS_ENV=production
             # Restart the application server (e.g., Puma)
             sudo systemctl restart puma
           EOF
 
       - name: Clean up SSH key
         run: rm -f ~/.ssh/id_rsa
+
