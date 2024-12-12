@@ -1,0 +1,47 @@
+name: Deploy Rails app to EC2
+
+on:
+  push:
+    branches:
+      - main  # Adjust this to your main branch (e.g., "master" or "production")
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'  # Use the correct Ruby version for your app
+
+      - name: Install dependencies
+        run: |
+          gem install bundler
+          bundle install --jobs 4 --retry 3
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
+            cd ${{ secrets.DEPLOYMENT_DIR }}
+            git pull origin main
+            source /etc/profile.d/rvm.sh  # Adjust if using RVM
+            bundle install --deployment --without development test
+            rake db:migrate RAILS_ENV=production
+            assets:precompile RAILS_ENV=production
+            # Restart the application server (e.g., Puma)
+            sudo systemctl restart puma
+          EOF
+
+      - name: Clean up SSH key
+        run: rm -f ~/.ssh/id_rsa
