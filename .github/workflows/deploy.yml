@@ -3,30 +3,26 @@ name: Deploy Rails app to EC2
 on:
   push:
     branches:
-      - main 
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the code from GitHub
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Set up Ruby version
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.2.0'  
+          ruby-version: '3.2.0'
 
-      # Install dependencies
       - name: Install dependencies
         run: |
           gem install bundler
           bundle install --jobs 4 --retry 3
 
-      # Install SSH key and configure known hosts
       - name: Install SSH key
         run: |
           mkdir -p ~/.ssh
@@ -34,44 +30,40 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
-      # Deploy to EC2 instance
       - name: Deploy to EC2
         run: |
-          # Connect to EC2 instance and deploy the app
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
             # Ensure RVM is sourced if it's used
             if [[ -s "/etc/profile.d/rvm.sh" ]]; then
               source /etc/profile.d/rvm.sh
             fi
 
-            # Set up environment variables
             export RAILS_ENV=production
             export SECRET_KEY_BASE=$(rails secret)
 
-            # Go to the deployment directory
             cd ${{ secrets.DEPLOYMENT_DIR }}
 
-            # Pull the latest code from the main branch
+            # Pull latest code
             git pull origin main
 
             # Install dependencies
             bundle install --deployment --without development test
 
-            # Database migration
+            # Run migrations
             rake db:migrate RAILS_ENV=production
 
             # Precompile assets
-            rake assets:precompile RAILS_ENV=production
+            bin/rails assets:precompile RAILS_ENV=production
 
-            # Check if Puma is running, and restart if needed
-            if ! systemctl is-active --quiet puma; then
-              sudo systemctl start puma
-            else
+            # Start/restart Puma (if systemd service is set up)
+            if systemctl is-active --quiet puma; then
               sudo systemctl restart puma
+            else
+              sudo systemctl start puma
             fi
           EOF
 
-      # Clean up SSH key after deployment
       - name: Clean up SSH key
         run: rm -f ~/.ssh/id_rsa
+
 
