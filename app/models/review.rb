@@ -1,7 +1,6 @@
 class Review < ApplicationRecord
   belongs_to :book
-  belongs_to :user
 
-  validates :content, :rating, presence: true
+  validates :content, presence: true
+  validates :rating, inclusion: { in: 1..5, message: "should be between 1 and 5" }
 end
-
