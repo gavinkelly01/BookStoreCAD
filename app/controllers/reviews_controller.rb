@@ -3,6 +3,10 @@ class ReviewsController < ApplicationController
 
   def create
     @review = @book.reviews.build(review_params)
+    
+    # Make sure user_id is included (for logged-in users via Devise)
+    @review.user_id = current_user.id if user_signed_in?
+    
     if @review.save
       render json: @review, status: :created
     else
@@ -20,6 +24,7 @@ class ReviewsController < ApplicationController
   end
 
   def review_params
+    # Allow content and rating in the review params
     params.require(:review).permit(:content, :rating)
   end
 end
