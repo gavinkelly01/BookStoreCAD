@@ -17,7 +17,7 @@ module BookstoreInventory
     config.autoload_lib(ignore: %w[assets tasks])
     config.middleware.insert_before 0, Rack::Cors do
       allow do
-        origins 'http://127.0.0.1:3000/' # Replace '*' with your frontend domain in production
+        origins 'http://localhost:3000/' # Replace '*' with your frontend domain in production
         resource '*', headers: :any, methods: [:get, :post, :put, :delete, :options]
       end
     end
