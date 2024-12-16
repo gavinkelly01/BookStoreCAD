@@ -1,19 +1,20 @@
 class ReviewsController < ApplicationController
-  before_action :set_book, only: [:create]
+  before_action :set_book, only: [:create, :index]
 
-def create
-  @review = @book.reviews.build(review_params)
-  @review.user_id = current_user.id if user_signed_in?
-
-  if @review.save
-    render json: @review, status: :created
-  else
-    # Log the error to the console or response for debugging
-    Rails.logger.error "Review creation failed: #{@review.errors.full_messages.join(', ')}"
-    render json: { errors: @review.errors.full_messages }, status: :unprocessable_entity
+  def index
+    # Fetch all reviews for the specific book
+    @reviews = @book.reviews
+    render json: @reviews
   end
-end
 
+  def create
+    @review = @book.reviews.build(review_params)
+    if @review.save
+      render json: @review, status: :created
+    else
+      render json: { errors: @review.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
 
   private
 
@@ -25,7 +26,6 @@ end
   end
 
   def review_params
-    # Allow content and rating in the review params
     params.require(:review).permit(:content, :rating)
   end
 end
