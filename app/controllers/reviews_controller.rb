@@ -1,15 +1,14 @@
-# app/controllers/reviews_controller.rb
 class ReviewsController < ApplicationController
-  before_action :set_book
+  before_action :set_book, only: [:index, :create]
 
+  # GET /books/:book_id/reviews
   def index
-    # Fetch all reviews for the specified book
     @reviews = @book.reviews
     render json: @reviews
   end
 
+  # POST /books/:book_id/reviews
   def create
-    # Create a new review for the specified book
     @review = @book.reviews.new(review_params)
     if @review.save
       render json: @review, status: :created
