@@ -1,12 +1,18 @@
 Rails.application.routes.draw do
-  resources :books
+  # Devise routes for user authentication
   devise_for :users
-  # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
+  
+  # Books routes
+  resources :books do
+    # Nested reviews routes
+    resources :reviews, only: [:index, :show, :create, :update, :destroy]
+  end
 
-  # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
-  # Can be used by load balancers and uptime monitors to verify that the app is live.
+  # Health check route
   get "up" => "rails/health#show", as: :rails_health_check
 
-  # Defines the root path route ("/")
-  # root "posts#index"
+  # Root route (you can change this to any other controller action, such as the home page)
+  # Adjust if you want to change the home page
+
+  # You can also add any other custom routes here if needed
 end
