@@ -10,14 +10,15 @@ module BookstoreInventory
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
     config.load_defaults 8.0
-
+ config.hosts << "ec2-54-195-254-227.eu-west-1.compute.amazonaws.com"
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     config.autoload_lib(ignore: %w[assets tasks])
     config.middleware.insert_before 0, Rack::Cors do
       allow do
-        origins 'http://localhost:3000/' # Replace '*' with your frontend domain in production
+        origins 'http://localhost:3000/'
+ # Replace '*' with your frontend domain in production
         resource '*', headers: :any, methods: [:get, :post, :put, :delete, :options]
       end
     end
