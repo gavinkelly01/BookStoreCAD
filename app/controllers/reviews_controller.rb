@@ -8,11 +8,18 @@ class ReviewsController < ApplicationController
   end
 
   def create
-    @review = @book.reviews.build(review_params)
-    if @review.save
-      render json: @review, status: :created
+    # Ensure that user_id is assigned to the review
+    # Assuming you store the logged-in user's ID in the session (e.g., session[:user_id])
+    if session[:user_id].present?
+      @review = @book.reviews.build(review_params.merge(user_id: session[:user_id]))
+      
+      if @review.save
+        render json: @review, status: :created
+      else
+        render json: { errors: @review.errors.full_messages }, status: :unprocessable_entity
+      end
     else
-      render json: { errors: @review.errors.full_messages }, status: :unprocessable_entity
+      render json: { error: 'You must be logged in to leave a review.' }, status: :unauthorized
     end
   end
 
