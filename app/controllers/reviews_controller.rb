@@ -8,9 +8,8 @@ class ReviewsController < ApplicationController
   end
 
   def create
-    # Create the review, with a random user_id
+    # Create the review, without requiring the user_id
     @review = @book.reviews.build(review_params)
-    @review.user_id = rand(1..1000)  # Random user_id (can be a random number within a range)
 
     if @review.save
       render json: @review, status: :created
