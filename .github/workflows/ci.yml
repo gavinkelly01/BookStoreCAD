@@ -62,7 +62,7 @@ jobs:
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
-  test:
+   test:
     runs-on: ubuntu-latest
 
     steps:
@@ -89,7 +89,15 @@ jobs:
           gem install bundler
           bundle install
 
+      - name: Check Ruby version
+        run: ruby -v  # Debug step to verify Ruby version is correct
+
+      - name: Prepare test database
+        env:
+          RAILS_ENV: test
+        run: bin/rails db:test:prepare
+
       - name: Run tests
         env:
           RAILS_ENV: test
-        run: bin/rails db:test:prepare test
+        run: bin/rails test
