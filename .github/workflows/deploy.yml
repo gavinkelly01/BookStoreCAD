@@ -26,36 +26,32 @@ jobs:
       - name: Install SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
 
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
-            # Ensure RVM is sourced if it's used
-            if [[ -s "/etc/profile.d/rvm.sh" ]]; then
-              source /etc/profile.d/rvm.sh
-            fi
-
+            set -e
             export RAILS_ENV=production
             export SECRET_KEY_BASE=$(rails secret)
 
             cd ${{ secrets.DEPLOYMENT_DIR }}
 
             # Pull latest code
-            git pull origin main
+            git pull origin main || echo "Git pull failed"
 
             # Install dependencies
-            bundle install --deployment --without development test
+            bundle install --deployment --without development test || echo "Bundle install failed"
 
             # Run migrations
-            rake db:migrate RAILS_ENV=production
+            rake db:migrate RAILS_ENV=production || echo "DB migration failed"
 
             # Precompile assets
-            bin/rails assets:precompile RAILS_ENV=production
+            bin/rails assets:precompile RAILS_ENV=production || echo "Assets precompile failed"
 
-            # Start/restart Puma (if systemd service is set up)
+            # Restart Puma
             if systemctl is-active --quiet puma; then
               sudo systemctl restart puma
             else
@@ -64,6 +60,7 @@ jobs:
           EOF
 
       - name: Clean up SSH key
-        run: rm -f ~/.ssh/id_rsa
-
+        if: always()
+        run: |
+          shred -u ~/.ssh/id_rsa
 
